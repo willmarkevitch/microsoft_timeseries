@@ -1,0 +1,361 @@
+---
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(astsa)
+library(tseries)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(rugarch)
+library(zoo)
+```
+
+\begin{center}
+\LARGE\bfseries
+Modeling Microsoft Stock Price Over Time: Utilizing ARIMA and GARCH  
+\end{center}
+
+\begin{center}
+\large
+Will Markevitch \\
+wmarkevitch@ucsb.edu \\
+Perm No: 4253167 \\
+June 13, 2024
+\end{center}
+
+## Project Abstract           
+
+This project utilizes Microsoft stock price data (MSFT) from the beginning of 2016 to the end of 2020 to 
+                                              
+forecast its future value. This is done by utilizing time series techniques such as ARIMA to model the 
+                                     
+trend and GARCH to model the volatility. By analyzing the historical stock prices and applying these 
+          
+advanced statistical models, we aim to provide accurate forecasts and insights into the stock price movements 
+                  
+of Microsoft.
+            
+\newpage
+
+## 1. Introduction         
+             
+The goal of this project is to analyze and forecast the stock price of Microsoft using time series modeling 
+                              
+techniques. The choice of Microsoft as the subject of this analysis is motivated by its significant influence 
+                                
+in the tech industry and its substantial stock market presence. Given the company's pivotal role in technology 
+                             
+and its robust business strategies, understanding its stock price behavior can provide valuable insights.            
+        
+                    
+In the past, various studies have employed time series models to forecast stock prices. Techniques such as 
+           
+ARIMA (AutoRegressive Integrated Moving Average) have been widely used due to their capability to model 
+            
+the linear dependencies in the data. However, stock prices are also known for their volatility, which is 
+           
+better captured by models like GARCH (Generalized AutoRegressive Conditional Heteroskedasticity).              
+             
+                              
+For this project, we will use ARIMA to model the overall trend and GARCH to capture the volatility in 
+                
+Microsoft's stock prices. The data set spans from April 2015 to April 2021, but for this analysis, we will 
+             
+focus on the period from January 2016 to December 2020, which covers significant events including the rise 
+                  
+of cloud computing and the impact of the COVID-19 pandemic.         
+         
+                               
+The analysis will involve data preprocessing, model fitting, and diagnostics to ensure the models are 
+              
+well-specified. The key findings and insights will be discussed, and potential areas for future study will 
+                      
+be highlighted to improve the robustness and accuracy of the forecasts.        
+           
+\newpage
+
+## 2. Data Description
+
+The dataset used in this project spans from April 2015 to April 2021, covering Microsoft's daily share prices 
+   
+over a period of six years, with all values expressed in US dollars and non-negative. Comprising 1511 daily 
+    
+records, the dataset offers a detailed view of price trends and fluctuations. It was sourced from Google's
+     
+public records using the 'GOOGLEFINANCE' command in Google Sheets, ensuring the data's accuracy 
+         
+and reliability. It should be noted that for simplicity of analysis and due to the nature of stock data 
+         
+(no weekends/holidays), I opted to average data for each month and subset from January 1st 2016 to 
+                 
+December 31st 2020. This comprehensive dataset is essential for analyzing how Microsoft's stock prices 
+             
+evolved through the late 2010s and through the beginning of the global Covid-19 pandemic. The focus on 
+           
+Microsoft is due to its significant business strategies involving expansions and acquisitions, which 
+            
+directly impact its stock prices. Moreover, as a leading tech company, Microsoft's performance during 
+          
+the pandemic serves as a crucial indicator of the tech sector's resilience. With the future of AI already 
+            
+among us, I wanted to also look into the historical performance of one of the leading companies in AI 
+                
+products. By studying this dataset, we aim to understand the impact of Microsoft's strategic decisions 
+                           
+on their stock prices and gauge the overall health and trends of the technology sector during a critical 
+                 
+period. The dataset can be accessed on Kaggle via the following link: [Microsoft Stock Time Series Analysis](https://www.kaggle.com/datasets/vijayvvenkitesh/microsoft-stock-time-series-analysis).
+
+\newpage
+
+## 3. Methodology
+
+### 3.1 SARIMA (p, d, q) x (P, D, Q) model 
+Seasonal Auto Regressive Integrated Moving Average (SARIMA) is a time series forecasting method that 
+                   
+accounts for seasonality in the data it is provided. It has the capabilities of an ARIMA model, but 
+                  
+also incorporates seasonal elements utilizing season differencing and seasonal auto regressive and 
+             
+moving average terms. This makes it a good mixture of capturing short-term patterns, such as week to
+         
+week patterns or day to day patterns in the data, but also capturing longer term seasonality trends
+         
+like year over year changes in stock price for our analysis. The general SARIMA model is represented by: $$\text{SARIMA}(p, d, q) * (P, D, Q)_s$$
+      
+Where:                
+- $p$: Non-seasonal autoregressive order       
+- $d$: Non-seasonal differencing order       
+- $q$: Non-seasonal moving average order      
+- $P$: Seasonal autoregressive order      
+- $D$: Seasonal differencing order     
+- $Q$: Seasonal moving average order     
+- $s$: Length of the seasonal cycle                  
+           
+Due to the sub-setting of data and potential misrepresentation of seasonal patterns, I opted to remove
+         
+the seasonality component and employ an Autoregressive Integrated Moving Average (ARIMA) model for
+        
+forecasting Microsoft's monthly stock prices. This decision ensures a more straightforward and potentially
+           
+more accurate modeling approach for the given dataset, which might not exhibit strong seasonal 
+        
+characteristics.
+
+### 3.2 GARCH model
+                        
+Generalized AutoRegressive Conditional Heteroskedasticity (GARCH) is a time series model designed 
+                                     
+to estimate the volatility of stock prices. Unlike traditional ARIMA models that focus on the mean 
+                                  
+of the series, GARCH models are particularly effective in capturing and forecasting the variability 
+                             
+or volatility of the data over time. This makes GARCH models particularly useful for financial time 
+                                    
+series, where volatility clustering (periods of high volatility followed by periods of low volatility) is a 
+          
+common phenomenon.
+                
+The GARCH model is defined by two components: the autoregressive (AR) term and the moving average 
+          
+(MA) term, both of which are applied to the variance of the series rather than the series itself. The basic 
+                     
+GARCH(p, q) model can be expressed as: $$\sigma^2_t = \alpha_0 + \sum^{q}_{i=1}\alpha_i\epsilon^2_{t-i} + \sum^{p}_{j=1}\beta_j\sigma^2_{t-j}$$      
+       
+Where:     
+        
+- $\sigma_t^2$: The conditional variance at time t.       
+- $\alpha_0$: A constant term.      
+- $\alpha_i$: The coefficients for the lagged squared residuals (innovations).      
+- $\epsilon_{t-i}^2$: The lagged squared residuals from the mean equation.       
+- $\beta_j$: The coefficients for the lagged conditional variances.     
+        
+In our analysis, we used a GARCH(1, 1) model in conjunction with an ARIMA(0, 1, 0) model to capture 
+                       
+both the trend and the volatility of Microsoft's monthly stock prices. This combined approach allows 
+                        
+us to model the mean and variance of the series effectively, accounting for the persistence in volatility 
+             
+that is often observed in stock prices. In a future study, I could utilize this in the forecasting         
+      
+for a more accurate prediction.
+
+\newpage
+
+## 4. Results
+
+### Arima Model Fitting              
+         
+**Note:** Remember due to the nature of stock data (no weekends/holidays), I opted to average data for each month and subset from January 1st 2016 to December 31st 2020.    
+              
+### Plotting the Original Data and ACF & PACF  
+       
+```{r, message = FALSE}
+msft <- read.csv("Microsoft_Stock.csv", stringsAsFactors = FALSE)
+
+msft$Date <- mdy_hms(msft$Date)
+
+msft <- msft %>%
+  filter(Date >= as.Date("2016-01-01"), Date <= as.Date("2020-12-31"))
+
+msft_monthly <- msft %>%
+  group_by(Year = year(Date), Month = month(Date)) %>%
+  summarise(Average.Close = mean(Close))
+
+msft_ts <- ts(msft_monthly$Average.Close, start = c(2016, 1), end = c(2020, 12), frequency = 12)
+
+ts.plot(msft_ts, xlab = "Year", ylab = "Average Close Price (USD $)", main = "Microsoft Stock Monthly Average Close Price")
+
+acf2(msft_ts)
+```
+       
+We can see that the data has a clear upward trend, indicating that it is non-stationary, so we need to difference our data to try and make it stationary.
+  
+### Determining the Difference              
+```{r}
+msft_ts_diff <- diff(log(msft_ts))
+ts.plot(msft_ts_diff, xlab = "Year", ylab = "Log Diff Average Close Price (USD $)", main = "Log Diff Microsoft Stock Monthly Average Close Price")
+```
+         
+This looks much more stationary (outlier in early 2020 - covid pandemic), so we can check the ACF and PACF graphs for determining ARIMA models to test.   
+    
+```{r}
+acf2(msft_ts_diff, 20)
+```
+             
+From the ACF and PACF graphs, it isn't clearly decipherable which values for $p$ and $q$ should be used for the ARIMA modeling. So instead, I'll test various values and check for alignment with the qq normality plot and lowest AIC and BIC.
+     
+### Model Selection: Estimation Results and Diagnostics                            
+```{r}
+sarima(msft_ts, 0, 1, 0, 0, 0, 0, 0) # Non-seasonal ARIMA(0, 1, 0) with zero mean
+sarima(msft_ts, 1, 1, 0, 0, 0, 0, 0) # Non-seasonal ARIMA(1, 1, 0) with zero mean
+sarima(msft_ts, 0, 1, 1, 0, 0, 0, 0) # Non-seasonal ARIMA(0, 1, 1) with zero mean
+sarima(msft_ts, 1, 1, 1, 0, 0, 0, 0) # Non-seasonal ARIMA(1, 1, 1) with zero mean
+```
+          
+### Forecasting                       
+From the analysis above, the model with the lowest AIC and BIC was a non-seasonal ARIMA(0, 0) model with a $d = 1$., so we can forecast the next 12 data points below:  
+       
+```{r}
+sarima.for(msft_ts, n.ahead = 12, 0, 1, 0)
+```
+
+### GARCH Fitting           
+        
+### Testing Various GARCH Models            
+         
+As we found that our Microsoft data is best represented by an ARIMA(0, 1, 0) model, when calculating
+        
+the ideal GARCH model we can use the differenced data and ARMA(0, 0). Here I'll test GARCH(1, 1),
+       
+GARCH(2, 1) and GARCH(1, 2):
+    
+```{r}
+msft_garch11 <- ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                mean.model=list(armaOrder=c(0,0)),distribution.model="norm")
+
+msft_garch11_summary <- ugarchfit(data = msft_ts, spec = msft_garch11)
+
+msft_garch11_summary
+
+msft_garch21 <- ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(2,1)),
+                mean.model=list(armaOrder=c(0,0)),distribution.model="norm")
+
+msft_garch21_summary <- ugarchfit(data = msft_ts, spec = msft_garch21)
+
+msft_garch21_summary
+
+msft_garch12 <- ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,2)),
+                mean.model=list(armaOrder=c(0,0)),distribution.model="norm")
+
+msft_garch12_summary <- ugarchfit(data = msft_ts, spec = msft_garch12)
+
+msft_garch12_summary
+```
+               
+### Diagnostics            
+        
+Now that the models are defined we can evaluate their diagnostics as follows:
+            
+```{r}
+plot(msft_garch11_summary, which = 'all')
+plot(msft_garch21_summary, which = 'all')
+plot(msft_garch12_summary, which = 'all')
+```
+
+### Model Selection           
+         
+Looking at our normality (QQ) plots and the Akaline (AIC) values, GARCH(1, 1) appears to be the best 
+             
+fit for our differenced data. 
+               
+\newpage
+
+## 5. Conclusion and Future Study
+         
+### Conclusion     
+         
+From the monthly data, we determined that Microsoft's stock prices most closely follow an 
+                           
+ARIMA(0, 1, 0) model, combined with a GARCH(1, 1) model to capture volatility. The ARIMA 
+                            
+model helps us understand the trend and differencing required to make the series stationary, 
+                               
+while the GARCH model captures the volatility clustering commonly observed in financial time 
+                  
+series. Our results suggest that this combination is effective in modeling and forecasting 
+                           
+Microsoft stock prices on a monthly basis, providing valuable insights into future price movements.
+        
+### Future Study                      
+             
+For future improvements, several approaches can be taken to enhance the robustness and accuracy of 
+              
+the model:        
+              
+- Daily Data Usage:          
+                    
+Incorporating all available daily data, rather than aggregating to monthly data, would allow 
+                                    
+for a more granular analysis. Although this approach would involve more complex data 
+                          
+cleaning and setup, it could significantly improve model accuracy by capturing finer details and 
+                      
+more frequent seasonal patterns.
+                 
+- Seasonality Consideration: 
+
+With the full set of 1511 daily records, we could better account for seasonality in the data.    
+                   
+This would allow for the potential use of a Seasonal ARIMA (SARIMA) model, which could capture  
+                            
+seasonal trends and provide a more nuanced understanding of stock price movements.       
+               
+- Alternative Models:            
+          
+Exploring alternative modeling techniques could provide new insights and potentially improve 
+                                             
+forecasting accuracy. For instance, spectral analysis methods could be employed to identify and 
+                           
+model periodicities in the data that are not captured by ARIMA and GARCH models. Additionally,          
+                 
+other advanced time series models, such as the State Space Model or Long Short-Term Memory 
+                    
+(LSTM) neural networks, could be considered for capturing complex patterns in stock prices.
+           
+- External Factors: 
+
+Incorporating external variables, such as macroeconomic indicators, company financials, or industry 
+                               
+trends, could enhance the model by providing additional context and improving its predictive power.
+                     
+          
+### By implementing these improvements, we can achieve a more detailed and accurate understanding of stock price behavior, leading to better forecasting and investment strategies.
+           
+\newpage
+
+## 6. Appendix and Source Code
+       
+**All plots used throughout the project have the associated code in line with it.**
